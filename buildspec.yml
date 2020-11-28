@@ -5,8 +5,9 @@ phases:
       - pip install pytest
   build:
     commands:
-      - python -m pytest tests
       - aws cloudformation package --template-file template.yaml --s3-bucket ip-list-parser-code-bucket --output-template-file outputSamTemplate.yaml
+      #- python -m pytest tests
+
 artifacts:
   type: zip
   files:
