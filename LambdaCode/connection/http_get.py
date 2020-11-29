@@ -1,3 +1,5 @@
+""" This file contains the HTTPGet class """
+
 import requests
 import logging
 
@@ -5,8 +7,9 @@ import logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
+
 class HTTPGet:
-    """ This class is reponsible for making requests to the IP list parser provider URL's and returning the result. """
+    """ This class is responsible for making requests to the IP list parser provider URL's and returning the result. """
 
     @staticmethod
     def http_get_contents(url):

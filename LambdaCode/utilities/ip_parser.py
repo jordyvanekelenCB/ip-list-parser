@@ -1,3 +1,5 @@
+""" File containing IPParser class """
+
 import re
 import logging
 
@@ -7,7 +9,7 @@ LOGGER.setLevel(logging.INFO)
 
 
 class IPParser:
-    """ This class is reponsible for parsing / extracting IPs """
+    """ This class is responsible for parsing and extracting IPs """
 # s*((?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])(?:\/(?:3[0-2]|[1-2][0-9]|[0-9]))?)
 # s*((?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9]).){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])(?:\/(?:3[0-2]|[1-2][0-9]|[0-9]))?)
 
@@ -17,6 +19,7 @@ class IPParser:
 
     @staticmethod
     def find_ips(content):
+        """ Find IP's in a string and return a list of IP addresses including their range """
 
         ip_addresses_single = []
 

@@ -1,3 +1,5 @@
+""" This file contains the IPListParser class """
+
 import logging
 from connection import HTTPGet
 from utilities import IPParser
@@ -9,6 +11,9 @@ LOGGER.setLevel(logging.INFO)
 
 
 class IPListParser:
+    """ This class is reponsible for the IPListParser component logic. It gathers IP lists from different sources and
+        compiles them into a single list to update the WAF IP set with.
+     """
 
     config_section_ip_list_parser = 'IP_LIST_PARSER'
 
