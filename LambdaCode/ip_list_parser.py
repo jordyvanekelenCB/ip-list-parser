@@ -3,7 +3,8 @@
 import logging
 from connection import HTTPGet
 from utilities import IPParser
-from connection import AWSWAFv2
+from connection import AWSWAFv2Connection
+from enum import Enum
 
 # Setup logger
 LOGGER = logging.getLogger()
@@ -25,18 +26,21 @@ class IPListParser:
 
         # Get and compile malware lists from malware ip block list providers
         malware_lists = self.get_lists('MALWARE_IP_LIST_PROVIDERS')
-        malware_ip_list = self.compile_lists(malware_lists)
+        malware_ip_list_compiled = self.compile_lists(malware_lists)
 
         # Get and compile attacker lists from attacker ip block list providers
         attacker_lists = self.get_lists('ATTACKERS_IP_LIST_PROVIDERS')
-        attacker_ip_list = self.compile_lists(attacker_lists)
+        attacker_ip_list_compiled = self.compile_lists(attacker_lists)
 
-        master_list = malware_ip_list + attacker_ip_list
+        # Update IP set with malware list
+        AWSWAFv2Connection(self.config, self.IPReputationListType.ip_reputation_list_type_malware)\
+            .update_ip_set(malware_ip_list_compiled)
 
-        # Update IP set with malware/attack list
-        AWSWAFv2(self.config).update_ip_set(master_list)
+        # Update IP set with attackers list
+        AWSWAFv2Connection(self.config, self.IPReputationListType.ip_reputation_list_type_attackers) \
+            .update_ip_set(attacker_ip_list_compiled)
 
-        LOGGER.info(len(master_list))
+        return {'malware_ip_list_compiled':  malware_ip_list_compiled, 'attacker_ip_list_compiled': attacker_ip_list_compiled}
 
     def get_lists(self, key):
         """ Get the lists from provider """
@@ -88,3 +92,7 @@ class IPListParser:
 
         return master_ip_list
 
+    class IPReputationListType(Enum):
+        """ Subclass enum for HTTPFloodLevel """
+        ip_reputation_list_type_malware = 'ip_reputation_list_type_malware'
+        ip_reputation_list_type_attackers = 'ip_reputation_list_type_attackers'

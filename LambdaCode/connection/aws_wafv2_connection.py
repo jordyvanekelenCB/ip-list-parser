@@ -1,23 +1,46 @@
 """ AWS WAF v2 connection """
 
+# pylint: disable=E0611
+# pylint: disable=E0401
+from enum import Enum
 from connection.aws_connection import AWSConnection
 
 
-class AWSWAFv2:
+class AWSWAFv2Connection:
     """ This class is responsible for handling connections to AWS WAF v2 """
 
     config_section_waf = 'AWS_WAF'
 
-    def __init__(self, config):
+    def __init__(self, config, ip_reputation_list_type):
         self.boto_wafv2_client = AWSConnection().get_connection('wafv2')
 
         # Retrieve config parser
         self.config = config
 
         # Setup instance attributes
-        self.ip_set_blocked_name = self.config[self.config_section_waf]['IP_SET_REPUTATION_BLOCKED_NAME']
+        if ip_reputation_list_type.value == 'ip_reputation_list_type_malware':
+            self.ip_set_blocked_name = self.config[self.config_section_waf]['IP_SET_REPUTATION_MALWARE_BLOCKED_NAME']
+
+        elif ip_reputation_list_type.value == 'ip_reputation_list_type_attackers':
+            self.ip_set_blocked_name = self.config[self.config_section_waf]['IP_SET_REPUTATION_ATTACKERS_BLOCKED_NAME']
+
         self.ip_set_blocked_scope = self.config[self.config_section_waf]['IP_SET_REPUTATION_SCOPE']
-        self.ip_set_blocked_identifier = self.config[self.config_section_waf]['IP_SET_REPUTATION_IDENTIFIER']
+        self.ip_set_blocked_identifier = self.retrieve_ip_set_identifier()
+
+    def retrieve_ip_set_identifier(self) -> str:
+        """ Get ip set identifier by calling wafv2.list_ip_sets because the resource ID has to be fetched manually after
+            creating the stack resource of the ip set.
+         """
+
+        ip_set_list = self.boto_wafv2_client.list_ip_sets(Scope=self.ip_set_blocked_scope)
+
+        ip_set_identifier = ''
+
+        for ip_set in ip_set_list["IPSets"]:
+            if ip_set["Name"] == self.ip_set_blocked_name:
+                ip_set_identifier = ip_set["Id"]
+
+        return ip_set_identifier
 
     def retrieve_ip_set(self) -> str:
         """ Retrieves the IP set from AWS WAFv2 """
@@ -33,7 +56,7 @@ class AWSWAFv2:
 
         # Get reponse for locktoken
         wafv2_response = self.boto_wafv2_client.get_ip_set(Name=self.ip_set_blocked_name, Scope=self.ip_set_blocked_scope,
-                                                     Id=self.ip_set_blocked_identifier)
+                                                           Id=self.ip_set_blocked_identifier)
         # Get locktoken
         locktoken = wafv2_response['LockToken']
 
@@ -41,3 +64,4 @@ class AWSWAFv2:
         self.boto_wafv2_client.update_ip_set(Name=self.ip_set_blocked_name, Scope=self.ip_set_blocked_scope,
                                              Id=self.ip_set_blocked_identifier,
                                              Addresses=new_block_list, LockToken=locktoken)
+
