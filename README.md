@@ -25,7 +25,7 @@ See the [AWS docs](https://docs.aws.amazon.com/solutions/latest/aws-waf-security
 - ##### IP Reputation List Parser Lambda
     - This Lambda function will be triggered by a time-based CloudWatch trigger.  
     - Then it will first contact third party IP reputation list providers and build two IP lists, an 'attacker' IP reputation list and a 'malware' IP reputation list.
-    - Then it will update the two IP sets with the newly discovered IP reputation lists.
+    - Then it will update the two IP sets in WAFv2 with the newly discovered IP reputation lists.
 
 ## AWS Services
 
