@@ -1,7 +1,8 @@
 """ This file contains the HTTPGet class """
 
-import requests
+# pylint: disable=E0401
 import logging
+import requests
 
 # Setup logger
 LOGGER = logging.getLogger()
@@ -11,8 +12,12 @@ LOGGER.setLevel(logging.INFO)
 class HTTPGet:
     """ This class is responsible for making requests to the IP list parser provider URL's and returning the result """
 
+    def __str__(self):
+        return self.__class__.__name__
+
     @staticmethod
-    def http_get_contents(url):
+    def http_get_contents(url) -> str:
+        """ Gets the content of an URL and returns it """
 
         try:
 
@@ -20,9 +25,11 @@ class HTTPGet:
 
             if http_response.status_code == 200:
                 return http_response.content.decode('utf-8')
-            else:
-                return None
 
-        except Exception as e:
-            LOGGER.error('Error. Could not connect to: {0}. Error message: {1}'.format(url, e))
-            return None
+            return ''
+
+        # pylint: disable=W0703
+        except Exception as error:
+            # pylint: disable=W1202
+            LOGGER.error('Error. Could not connect to: {0}. Error message: {1}'.format(url, error))
+            return ''
