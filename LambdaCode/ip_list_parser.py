@@ -12,7 +12,7 @@ LOGGER.setLevel(logging.INFO)
 
 
 class IPListParser:
-    """ This class is reponsible for the IPListParser component logic. It gathers IP lists from different sources and
+    """ This class is responsible for the IPListParser component logic. It gathers IP lists from different sources and
         compiles them into a single list to update the WAF IP set with.
      """
 
@@ -85,10 +85,14 @@ class IPListParser:
         # For each unique key in the master IP list add to master ip list
         for key in master_ip_dict.keys():
 
-            if master_ip_dict[key] > 1:
+            if master_ip_dict[key] > 1 or '/32' not in key:  # Whitelist IP blocks due to single occurrence
 
                 # Append to master list depending in frequency across multiple lists (quality check)
                 master_ip_list.append(key)
+
+        # Force list to have maximum of 10000 IP's associated with it because of the WAFv2 IP set limitation
+        if len(master_ip_list) >= 10000:
+            master_ip_list = master_ip_list[:10000]
 
         return master_ip_list
 
