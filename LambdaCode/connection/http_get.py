@@ -21,7 +21,7 @@ class HTTPGet:
 
         try:
 
-            http_response = requests.get(url)
+            http_response = requests.get(url, timeout=5)
 
             if http_response.status_code == 200:
                 return http_response.content.decode('utf-8')
@@ -32,4 +32,5 @@ class HTTPGet:
         except Exception as error:
             # pylint: disable=W1202
             LOGGER.error('Error. Could not connect to: {0}. Error message: {1}'.format(url, error))
-            return ''
+
+        return ''
