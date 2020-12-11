@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'IP Reputation List Parser Lambda function'
+
+Metadata:
+  Tags:
+    CostCenter: "hosting-deployment"
+
+Parameters:
+  AppGroup:
+    Type: "String"
+    Default: "ip-reputation-list-parser"
+  Environment:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/global/environment"
+  Owner:
+    Type: "String"
+    Default: "security"
+    Description: "Used for alerting purposes."
+  Region:
+    Description: "Specify the region"
+    Type: "String"
+    Default: "eu-west-1"
+    AllowedValues:
+      - "eu-west-1"
+
+Conditions:
+  CreateTestResources: !Equals [ !Ref Environment, testing ]
+
+Mappings:
+  ImageOriginArnElbMap:
+    testing:
+      "arn" : "arn:aws:elasticloadbalancing:eu-west-1:608797611516:loadbalancer/app/testing-image-origin-elb/22c5f30272b1eaa9"
+    acceptance:
+      "arn" : "arn:aws:elasticloadbalancing:eu-west-1:253253097711:loadbalancer/app/acceptance-image-origin-elb/1d10216e950de44a"
+    production:
+      "arn" : "arn:aws:elasticloadbalancing:eu-west-1:772318034610:loadbalancer/app/production-image-origin-elb/dee736dc44c5cfc7"
+
+Resources:
+  IPReputationListParser:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: "ip-reputation-list-parser"
+      CodeUri: ./LambdaCode
+      Events:
+        Schedule:
+          Type: "Schedule"
+          Properties:
+            Schedule: "rate(1 hour)"
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 900
+      Role: !ImportValue "ip-reputation-list-parser-iam-role-arn"
+      Environment:
+        Variables:
+          REGION: !Sub "${Region}"
+      Tags:
+        Name: !Sub "${AppGroup}-ip-reputation-list-parser"
+        AppGroup: !Sub "${AppGroup}"
+        AppRole: "function"
+        Environment: !Ref "Environment"
+        Owner: !Ref "Owner"
+
+  IPReputationListParserIpSetMalwareBlocked:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: ip_set_reputation_malware_blocked
+      Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked clients."
+      Scope: "REGIONAL"
+      IPAddressVersion: IPV4
+      Addresses: []
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${Environment}-${AppGroup}-ip-reputation-list-parser-malware-ipset'
+        - Key: "AppGroup"
+          Value: !Sub "${AppGroup}"
+        - Key: "AppRole"
+          Value: "ipset"
+        - Key: "Environment"
+          Value: !Sub "${Environment}"
+
+  IPReputationListParserIpSetAttackersBlocked:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: ip_set_reputation_attackers_blocked
+      Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked attacker clients provided by third party IP reputation list providers."
+      Scope: "REGIONAL"
+      IPAddressVersion: IPV4
+      Addresses: []
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${Environment}-${AppGroup}-ip-reputation-list-parser-attackers-ipset'
+        - Key: "AppGroup"
+          Value: !Sub "${AppGroup}"
+        - Key: "AppRole"
+          Value: "ipset"
+        - Key: "Environment"
+          Value: !Sub "${Environment}"
+
+  IPReputationListParserWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Description: This Web ACL is used to block malware and attackers that have been detected by 3rd party IP reputation list providers.
+      Name: ip-reputation-list-parser-web-acl
+      Rules:
+        - Name: ip_reputation_list_malware_block_rule
+          Action:
+            Count: {}
+          Priority: 1
+          Statement:
+            IPSetReferenceStatement:
+              Arn: !GetAtt "IPReputationListParserIpSetMalwareBlocked.Arn"
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: True
+            MetricName: ip-reputation-list-parser-web-acl-block-malware-rule-metric
+            SampledRequestsEnabled: True
+        - Name: ip_reputation_list_attackers_block_rule
+          Action:
+            Count: { }
+          Priority: 1
+          Statement:
+            IPSetReferenceStatement:
+              Arn: !GetAtt "IPReputationListParserIpSetAttackersBlocked.Arn"
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: True
+            MetricName: ip-reputation-list-parser-web-acl-block-attackers-rule-metric
+            SampledRequestsEnabled: True
+      Scope: REGIONAL
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${Environment}-${AppGroup}-acl'
+        - Key: "AppGroup"
+          Value: !Sub "${AppGroup}"
+        - Key: "AppRole"
+          Value: "Web ACL"
+        - Key: "Environment"
+          Value: !Sub "${Environment}"
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: True
+        MetricName: ip-reputation-list-parser-web-acl-metric
+        SampledRequestsEnabled: True
+
+  IPReputationListParserImageOriginWebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !FindInMap
+        - ImageOriginArnElbMap
+        - !Ref Environment
+        - arn
+      WebACLArn: !GetAtt "IPReputationListParserWebACL.Arn"
+
+
+  # -- Testing resources
+  IPReputationListParserIpSetMalwareBlockedTest:
+    Type: AWS::WAFv2::IPSet
+    Condition: CreateTestResources
+    Properties:
+      Name: ip_set_reputation_malware_blocked_test
+      Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked clients."
+      Scope: "REGIONAL"
+      IPAddressVersion: IPV4
+      Addresses: [ ]
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${Environment}-${AppGroup}-ip-reputation-list-parser-malware-ipset'
+        - Key: "AppGroup"
+          Value: !Sub "${AppGroup}"
+        - Key: "AppRole"
+          Value: "ipset"
+        - Key: "Environment"
+          Value: !Sub "${Environment}"
+
+  IPReputationListParserIpSetAttackersBlockedTest:
+    Type: AWS::WAFv2::IPSet
+    Condition: CreateTestResources
+    Properties:
+      Name: ip_set_reputation_attackers_blocked_test
+      Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked attacker clients provided by third party IP reputation list providers."
+      Scope: "REGIONAL"
+      IPAddressVersion: IPV4
+      Addresses: [ ]
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${Environment}-${AppGroup}-ip-reputation-list-parser-attackers-ipset'
+        - Key: "AppGroup"
+          Value: !Sub "${AppGroup}"
+        - Key: "AppRole"
+          Value: "ipset"
+        - Key: "Environment"
+          Value: !Sub "${Environment}"
+

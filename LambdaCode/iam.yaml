@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM resources for the IP Reputation Lists Parser component."
+Metadata:
+  Tags:
+    CostCenter: "hosting-deployment"
+Parameters:
+  AppGroup:
+    Type: "String"
+    Default: "ip-reputation-list-parser"
+    Description: "The name of the AppGroup"
+    AllowedPattern: "^[a-z0-9\\-]{1,32}$"
+  Environment:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/global/environment"
+  Region:
+    Description: "Specify the region"
+    Type: "String"
+    Default: "eu-west-1"
+    AllowedValues:
+      - "eu-west-1"
+
+Conditions:
+  isTestingEnvironment: !Equals [ !Ref Environment, testing ]
+
+Resources:
+  IPReputationListParserManagedPolicyAWSWAFv2GetUpdateIPSet:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: !Sub "Policy for managing WAFv2 IP blocklist ${AppGroup}"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "wafv2:GetIPSet"
+              - "wafv2:UpdateIPSet"
+            Resource:
+              - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_attackers_blocked/*"
+              - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_malware_blocked/*"
+              - !If
+                - isTestingEnvironment
+                - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_attackers_blocked_test/*"
+                - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_malware_blocked_test/*"
+
+  IPReputationListParserManagedPolicyAWSWAFv2ListIPSet:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: !Sub "Policy for managing WAFv2 IP blocklist ${AppGroup}"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "wafv2:ListIPSets"
+            Resource: "*"
+
+  IPListsParserLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${AppGroup}-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - !ImportValue "default-lambda-managed-policy-arn"
+        - !Ref "IPReputationListParserManagedPolicyAWSWAFv2ListIPSet"
+        - !Ref "IPReputationListParserManagedPolicyAWSWAFv2GetUpdateIPSet"
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      PermissionsBoundary: !ImportValue "iam-boundary-application-deployment-permission-boundary"
+      Tags:
+        - Key: "AppGroup"
+          Value: !Ref "AppGroup"
+        - Key: "AppRole"
+          Value: "role"
+        - Key: "Environment"
+          Value: !Ref "Environment"
+        - Key: "Name"
+          Value: !Sub "${AppGroup}-role"
+
+Outputs:
+  IPReputationListParserLambdaRole:
+    Description: "The role ARN that should be used by the ip-reputation-list-parser lambda"
+    Value: !GetAtt "IPReputationListsParserLambdaRole.Arn"
+    Export:
+      Name: !Sub "${AppGroup}-iam-role-arn"
