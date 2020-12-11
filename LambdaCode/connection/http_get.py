@@ -3,6 +3,7 @@
 # pylint: disable=E0401
 import logging
 import urllib3
+
 # Setup logger
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
