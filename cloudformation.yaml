@@ -25,7 +25,7 @@ Parameters:
       - "eu-west-1"
 
 Conditions:
-  CreateTestResources: !Equals [ !Ref Environment, testing ]
+  isTestingEnvironment: !Equals [ !Ref Environment, testing ]
 
 Mappings:
   ImageOriginArnElbMap:
@@ -155,7 +155,7 @@ Resources:
   # -- Testing resources
   IPReputationListParserIpSetMalwareBlockedTest:
     Type: AWS::WAFv2::IPSet
-    Condition: CreateTestResources
+    Condition: isTestingEnvironment
     Properties:
       Name: ip_set_reputation_malware_blocked_test
       Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked clients."
@@ -174,7 +174,7 @@ Resources:
 
   IPReputationListParserIpSetAttackersBlockedTest:
     Type: AWS::WAFv2::IPSet
-    Condition: CreateTestResources
+    Condition: isTestingEnvironment
     Properties:
       Name: ip_set_reputation_attackers_blocked_test
       Description: "This is the IP set used by the IP List Parser component and contains IPv4 addresses of blocked attacker clients provided by third party IP reputation list providers."
