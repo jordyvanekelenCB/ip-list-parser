@@ -2,7 +2,7 @@ version: 0.1
 phases:
   install:
     commands:
-      - pip install pytest
+      - pip install -r requirements.txt -t ./
   build:
     commands:
       - aws cloudformation package --template-file template.yaml --s3-bucket ip-list-parser-code-bucket --output-template-file outputSamTemplate.yaml
