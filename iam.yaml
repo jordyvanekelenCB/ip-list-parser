@@ -54,7 +54,7 @@ Resources:
               - "wafv2:ListIPSets"
             Resource: "*"
 
-  IPListsParserLambdaRole:
+  IPReputationListParserLambdaRole:
     Type: "AWS::IAM::Role"
     Properties:
       RoleName: !Sub "${AppGroup}-role"
@@ -86,6 +86,6 @@ Resources:
 Outputs:
   IPReputationListParserLambdaRole:
     Description: "The role ARN that should be used by the ip-reputation-list-parser lambda"
-    Value: !GetAtt "IPReputationListsParserLambdaRole.Arn"
+    Value: !GetAtt "IPReputationListParserLambdaRole.Arn"
     Export:
       Name: !Sub "${AppGroup}-iam-role-arn"
