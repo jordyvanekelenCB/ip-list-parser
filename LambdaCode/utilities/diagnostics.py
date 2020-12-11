@@ -29,7 +29,12 @@ class Diagnostics:
 
         LOGGER.info('================================ IP list parser results ================================')
 
+        # pylint: disable=W1202
         LOGGER.info("Total number of attacker IPs in {0} block lists: {1}."
-                    .format(len(number_of_attacker_reputation_lists) ,len(attacker_ip_list_compiled)))
-        LOGGER.info("Total number of malware IPs in {0} block list: {1}."
+                    .format(len(number_of_attacker_reputation_lists), len(attacker_ip_list_compiled)))
+        LOGGER.info("Total number of malware IPs in {0} block lists: {1}."
                     .format(len(number_of_malware_reputation_lists), len(malware_ip_list_compiled)))
+
+        LOGGER.info("Actions taken: Updated attackers IP set with {0} new entries. "
+                    "Updated malware IP set with {1} new entries."
+                    .format(len(attacker_ip_list_compiled), len(malware_ip_list_compiled)))
