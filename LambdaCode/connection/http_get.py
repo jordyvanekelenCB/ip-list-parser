@@ -2,7 +2,7 @@
 
 # pylint: disable=E0401
 import logging
-import requests
+import urllib3
 
 # Setup logger
 LOGGER = logging.getLogger()
@@ -19,12 +19,17 @@ class HTTPGet:
     def http_get_contents(url) -> str:
         """ Gets the content of an URL and returns it """
 
+        # Clean url
+        url = str(url).strip('\\')
+        url = str(url).strip('\n')
+
         try:
+            http = urllib3.PoolManager()
+            http_response = http.request('GET', url, timeout=5)
+            http_response_content = http_response.data
 
-            http_response = requests.get(url, timeout=5)
-
-            if http_response.status_code == 200:
-                return http_response.content.decode('utf-8')
+            if http_response.status == 200:
+                return http_response_content.decode('utf-8')
 
             return ''
 
