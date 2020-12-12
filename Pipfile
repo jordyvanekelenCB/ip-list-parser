@@ -6,10 +6,18 @@ name = "pypi"
 [packages]
 urllib3 = "*"
 pytest = "*"
+boto3 = "*"
+botocore = "*"
+aws-lambda-logging = "*"
+requests = "*"
 
 [dev-packages]
+urllib3 = "*"
+pytest = "*"
+boto3 = "*"
+botocore = "*"
+aws-lambda-logging = "*"
+requests = "*"
 
 [requires]
 python_version = "3.8"
-
-git push origin bug/dependencies --no-verify && git checkout development && git merge bug/dependencies && git push origin development --no-verify && git checkout master && git merge development && git push origin master --no-verify && git checkout bug/dependencies
