@@ -23,6 +23,7 @@ Conditions:
   isTestingEnvironment: !Equals [ !Ref Environment, testing ]
 
 Resources:
+
   IPReputationListParserManagedPolicyAWSWAFv2GetUpdateIPSet:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -40,7 +41,11 @@ Resources:
               - !If
                 - isTestingEnvironment
                 - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_attackers_blocked_test/*"
+                - !Ref AWS::NoValue
+              - !If
+                - isTestingEnvironment
                 - !Sub "arn:aws:wafv2:${Region}:${AWS::AccountId}:regional/ipset/ip_set_reputation_malware_blocked_test/*"
+                - !Ref AWS::NoValue
 
   IPReputationListParserManagedPolicyAWSWAFv2ListIPSet:
     Type: "AWS::IAM::ManagedPolicy"
