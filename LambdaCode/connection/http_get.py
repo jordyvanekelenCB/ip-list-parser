@@ -24,6 +24,7 @@ class HTTPGet:
         url = str(url).strip('\n')
 
         try:
+            # Fixed SSL bug on MacOS: /Applications/Python\ 3.8/Install\ Certificates.command
             http = urllib3.PoolManager()
             http_response = http.request('GET', url, timeout=5)
             http_response_content = http_response.data

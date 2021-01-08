@@ -105,7 +105,7 @@ def test_system(get_mock_config):
     ip_set_reputation_malware_blocked_test = wafv2_ip_set_reputation_malware_blocked_test_response["IPSet"]["Addresses"]
 
     # Assert IP sets contain minimum entries
-    assert len(ip_set_reputation_malware_blocked_test) > 300
+    assert len(ip_set_reputation_malware_blocked_test) > 200
     assert len(ip_set_reputation_attackers_blocked_test) > 1000
 
     # Assert system test was completed within allotted timeframe (performance)
